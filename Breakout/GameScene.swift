@@ -13,7 +13,12 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var paddle = SKSpriteNode()
     var brick = SKSpriteNode()
     var loseZone = SKSpriteNode()
-    
+    var playLabel = SKLabelNode()
+    var livesLabel = SKLabelNode()
+    var scoreLabel = SKLabelNode()
+    var playingGame = false
+    var score = 0
+    var lives = 3
     override func didMove(to view:SKView){
         //this stuff happens once when the app opens
         physicsWorld.contactDelegate = self
@@ -21,7 +26,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         createBackground()
         makeLoseZone()
         resetGame()
-        kickBall()
+        makeLabels()
     }
     
     func resetGame()
@@ -30,11 +35,17 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         makeBall()
         makePaddle()
         makeBrick()
+        updateLabels()
     }
     
     func kickBall() {
         ball.physicsBody?.isDynamic = true
         ball.physicsBody?.applyImpulse(CGVector(dx: 3, dy: 5))
+    }
+    
+    func updateLabels() {
+        scoreLabel.text = "Score: \(score)"
+        livesLabel.text = "Score: \(lives)"
     }
     
     func createBackground(){
@@ -90,7 +101,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     func makeBrick() {
         brick.removeFromParent()   //remove the brick if it exists
         brick = SKSpriteNode(color: .blue, size: CGSize(width: 50, height: 20))
-        brick.position = CGPoint(x: frame.midX, y: frame.midY - 50)
+        brick.position = CGPoint(x: frame.midX, y: frame.maxY - 50)
         brick.name = "brick"
         brick.physicsBody = SKPhysicsBody(rectangleOf: brick.size)
         brick.physicsBody?.isDynamic = false
@@ -99,9 +110,69 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
     func makeLoseZone() {
         loseZone = SKSpriteNode(color: .red, size: CGSize(width: frame.width, height: 50))
-        loseZone.position = CGPoint(x: frame.midX, y: frame.midY + 25)
+        loseZone.position = CGPoint(x: frame.midX, y: frame.minY + 25)
         loseZone.physicsBody = SKPhysicsBody(rectangleOf: loseZone.size)
         loseZone.physicsBody?.isDynamic = false
         addChild(loseZone)
+    }
+    
+    func makeLabels() {
+        playLabel.fontSize = 24
+        playLabel.text = "Tap to Start"
+        playLabel.fontName = "Arial"
+        playLabel.position = CGPoint(x: frame.midX, y: frame.minY - 50)
+        playLabel.name = "playLabel"
+        addChild(playLabel)
+        
+        livesLabel.fontSize = 18
+        livesLabel.fontColor = .black
+        livesLabel.position = CGPoint(x: frame.minX + 50, y: frame.minY + 18)
+        addChild(livesLabel)
+        
+        scoreLabel.fontSize = 18
+        scoreLabel.fontColor = .black
+        scoreLabel.position = CGPoint(x: frame.minX - 50, y: frame.minY + 18)
+        addChild(scoreLabel)
+    }
+    
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        for touch in touches{
+            let location = touch.location(in: self)
+            if playingGame == true {
+                paddle.position.x = location.x
+            }
+            else {
+                for node in nodes(at: location) {
+                    if node.name == "playLabel" {
+                        playingGame = true
+                        node.alpha = 0
+                        score = 0
+                        lives = 3
+                        updateLabels()
+                        kickBall()
+                    }
+                }
+            }
+        }
+    }
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        for touch in touches{
+            let location = touch.location(in: self)
+            paddle.position.x = location.x
+        }
+    }
+    
+    func didBegin(_ contact: SKPhysicsContact) {
+        if contact.bodyA.node?.name == "brick" ||
+                  contact.bodyB.node?.name == "brick" {
+                   print("You win!")
+                   brick.removeFromParent()
+                   ball.removeFromParent()
+               }
+               if contact.bodyA.node?.name == "loseZone" ||
+                  contact.bodyB.node?.name == "loseZone" {
+                   print("You lose!")
+                   ball.removeFromParent()
+            }
     }
 }
