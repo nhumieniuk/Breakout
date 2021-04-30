@@ -41,12 +41,12 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
     func kickBall() {
         ball.physicsBody?.isDynamic = true
-        ball.physicsBody?.applyImpulse(CGVector(dx: 3, dy: 5))
+        ball.physicsBody?.applyImpulse(CGVector(dx: Int.random(in: -5...5), dy: 5))
     }
     
     func updateLabels() {
         scoreLabel.text = "Score: \(score)"
-        livesLabel.text = "Score: \(lives)"
+        livesLabel.text = "Lives: \(lives)"
     }
     
     func createBackground(){
@@ -131,6 +131,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     func makeLoseZone() {
         loseZone = SKSpriteNode(color: .red, size: CGSize(width: frame.width, height: 50))
         loseZone.position = CGPoint(x: frame.midX, y: frame.minY + 25)
+        loseZone.name = "loseZone"
         loseZone.physicsBody = SKPhysicsBody(rectangleOf: loseZone.size)
         loseZone.physicsBody?.isDynamic = false
         addChild(loseZone)
@@ -146,11 +147,13 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         livesLabel.fontSize = 18
         livesLabel.fontColor = .black
         livesLabel.position = CGPoint(x: frame.minX + 50, y: frame.minY + 18)
+        livesLabel.name = "livesLabel"
         addChild(livesLabel)
         scoreLabel.fontSize = 18
         scoreLabel.fontColor = .black
         scoreLabel.fontName = "Arial"
         scoreLabel.position = CGPoint(x: frame.maxX - 50, y: frame.minY + 18)
+        scoreLabel.name = "scoreLabel"
         addChild(scoreLabel)
     }
     
@@ -187,6 +190,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             if contact.bodyA.node == brick ||
                 contact.bodyB.node == brick {
                 score += 1
+                // increase ball velocity by 2%
+                ball.physicsBody!.velocity.dx = ball.physicsBody!.velocity.dx * CGFloat(1.02)
+                ball.physicsBody!.velocity.dy = ball.physicsBody!.velocity.dy * CGFloat(1.02)
                 updateLabels()
                 if brick.color == .blue {
                     brick.color = .orange
@@ -194,26 +200,28 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 else if brick.color == .orange {
                     brick.color = .green
                 }
+                else{
                 brick.removeFromParent()
                 removedBricks += 1
+                }
                 if removedBricks == bricks.count {
                     gameOver(winner: true)
                 }
             }
         }
         if contact.bodyA.node?.name == "loseZone" ||
-            contact.bodyB.node?.name == "loseZone" {
-            lives -= 1
-            if lives > 0 {
-                score = 0
-                resetGame()
-                kickBall()
-            }
-            else {
-                gameOver(winner: false)
+                contact.bodyB.node?.name == "loseZone" {
+                lives -= 1
+                if lives > 0 {
+                    score = 0
+                    resetGame()
+                    kickBall()
+                }
+                else {
+                    gameOver(winner: false)
+                }
             }
         }
-    }
     
     func gameOver (winner: Bool){
         playingGame = false
